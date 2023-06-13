@@ -34,7 +34,7 @@ public interface IUserService extends IService<User> {
      * @param session session
      * @return 是否陈成功
      */
-    Result login(String phone, String password, String code, HttpSession session);
+    Result login(String phone, String password, String code, HttpSession session) throws Exception;
 
 
 }

@@ -1,13 +1,20 @@
 package com.hmdp.utils;
 
+import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.collection.CollectionUtil;
 import com.hmdp.dto.UserDTO;
 import com.hmdp.entity.User;
+import org.apache.logging.log4j.util.Strings;
+import org.springframework.core.annotation.Order;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @ClassName LoginInterceptor
@@ -16,18 +23,20 @@ import java.util.Objects;
  * @Date 2023-06-13 12:07
  * @Version 1.0
  */
+
 public class LoginInterceptor implements HandlerInterceptor {
+
+
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-        HttpSession session = request.getSession();
-        User user = (User) session.getAttribute("user");
+
+        UserDTO user = UserHolder.getUser();
         if (Objects.isNull(user)) {
-            // 未授权
             response.setStatus(401);
             return false;
         }
-        UserHolder.saveUser(new UserDTO(user.getId(), user.getNickName(), user.getIcon()));
         return true;
+
     }
 
     /**

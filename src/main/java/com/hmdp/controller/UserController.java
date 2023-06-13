@@ -14,14 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpSession;
 
-/**
- * <p>
- * 前端控制器
- * </p>
- *
- * @author 虎哥
- * @since 2021-12-22
- */
+
 @Slf4j
 @RestController
 @RequestMapping("/user")
@@ -47,7 +40,7 @@ public class UserController {
      * @param loginForm 登录参数，包含手机号、验证码；或者手机号、密码
      */
     @PostMapping("/login")
-    public Result login(@RequestBody LoginFormDTO loginForm, HttpSession session) {
+    public Result login(@RequestBody LoginFormDTO loginForm, HttpSession session) throws Exception {
         return userService.login(loginForm.getPhone(), loginForm.getPassword(), loginForm.getCode(), session);
     }
 
