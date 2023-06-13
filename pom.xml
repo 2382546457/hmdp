@@ -51,6 +51,7 @@
             <artifactId>mybatis-plus-boot-starter</artifactId>
             <version>3.4.3</version>
         </dependency>
+
         <!--hutool-->
         <dependency>
             <groupId>cn.hutool</groupId>
