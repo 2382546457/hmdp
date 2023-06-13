@@ -1,5 +1,6 @@
 package com.hmdp.utils;
 
+import cn.hutool.core.bean.BeanUtil;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.Claim;
@@ -30,6 +31,10 @@ public class JWTUtils {
                 .sign(Algorithm.HMAC256(SIGN));// 签名，使用算法生成。
 
         return token;
+    }
+    public static <T> String generateToken(T bean) {
+        Map<String, Object> stringObjectMap = BeanUtil.beanToMap(bean);
+        return generateToken(stringObjectMap);
     }
 
 
