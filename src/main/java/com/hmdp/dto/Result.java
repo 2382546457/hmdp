@@ -11,7 +11,7 @@ import java.util.List;
 @AllArgsConstructor
 public class Result {
     private Boolean success;
-    private String errorMsg;
+    private String errorMessage;
     private Object data;
     private Long total;
 

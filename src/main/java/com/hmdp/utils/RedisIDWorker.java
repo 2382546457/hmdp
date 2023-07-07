@@ -1,5 +1,6 @@
 package com.hmdp.utils;
 
+import io.netty.util.internal.StringUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
@@ -30,6 +31,7 @@ public class RedisIDWorker {
      * @return long类型的全局id
      */
     public long nextID(String prefix) {
+        assert !StringUtil.isNullOrEmpty(prefix);
         LocalDateTime now = LocalDateTime.now();
         long nowSecond = now.toEpochSecond(ZoneOffset.UTC);
         long timeStamp = nowSecond - BEGIN_TIMESTAMP;
