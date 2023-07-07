@@ -31,6 +31,7 @@ public class VoucherOrderController {
     private IVoucherOrderService voucherOrderService;
     @Autowired
     private IVoucherService voucherService;
+
     @PostMapping("seckill/{id}")
     public Result seckillVoucher(@PathVariable("id") Long voucherId) {
         SeckillVoucher seckillVoucher = seckillVoucherService.getById(voucherId);
@@ -48,8 +49,7 @@ public class VoucherOrderController {
         }
 
         // 开始秒杀
-        String orderID = voucherOrderService.secondKill(seckillVoucher);
+        return voucherOrderService.secondKill(seckillVoucher);
 
-        return Result.ok(orderID);
     }
 }

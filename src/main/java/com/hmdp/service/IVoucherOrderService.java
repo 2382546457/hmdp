@@ -1,5 +1,6 @@
 package com.hmdp.service;
 
+import com.hmdp.dto.Result;
 import com.hmdp.entity.SeckillVoucher;
 import com.hmdp.entity.Voucher;
 import com.hmdp.entity.VoucherOrder;
@@ -14,5 +15,5 @@ public interface IVoucherOrderService extends IService<VoucherOrder> {
      * @param seckillVoucher 优惠券
      * @return 生成的订单id
      */
-    String secondKill(SeckillVoucher seckillVoucher);
+    Result secondKill(SeckillVoucher seckillVoucher);
 }
