@@ -14,7 +14,7 @@ public interface IShopService extends IService<Shop> {
      * @param id id
      * @return
      */
-    Result queryById(Long id) throws JsonProcessingException;
+    Result queryById(Long id) throws JsonProcessingException, InterruptedException;
 
     /**
      * 更新shop

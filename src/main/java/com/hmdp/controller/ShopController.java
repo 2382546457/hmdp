@@ -33,7 +33,7 @@ public class ShopController {
      * @return 商铺详情数据
      */
     @GetMapping("/{id}")
-    public Result queryShopById(@PathVariable("id") Long id) throws JsonProcessingException {
+    public Result queryShopById(@PathVariable("id") Long id) throws JsonProcessingException, InterruptedException {
         return shopService.queryById(id);
     }
 
