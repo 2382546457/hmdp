@@ -16,4 +16,11 @@ public interface IVoucherOrderService extends IService<VoucherOrder> {
      * @return 生成的订单id
      */
     Result secondKill(SeckillVoucher seckillVoucher);
+
+    /**
+     * 创建订单
+     * @param voucher
+     * @return
+     */
+    Result createVoucherOrder(SeckillVoucher voucher);
 }
