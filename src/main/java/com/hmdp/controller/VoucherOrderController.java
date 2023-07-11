@@ -1,6 +1,7 @@
 package com.hmdp.controller;
 
 
+import com.google.common.util.concurrent.RateLimiter;
 import com.hmdp.dto.Result;
 import com.hmdp.entity.SeckillVoucher;
 import com.hmdp.entity.Voucher;
@@ -8,6 +9,8 @@ import com.hmdp.entity.VoucherOrder;
 import com.hmdp.service.ISeckillVoucherService;
 import com.hmdp.service.IVoucherOrderService;
 import com.hmdp.service.IVoucherService;
+import com.hmdp.utils.UserHolder;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDateTime;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author 何
@@ -23,18 +27,27 @@ import java.util.Objects;
  */
 @RestController
 @RequestMapping("/voucher-order")
+@Slf4j
 public class VoucherOrderController {
     @Autowired
     private ISeckillVoucherService seckillVoucherService;
 
     @Autowired
     private IVoucherOrderService voucherOrderService;
-    @Autowired
-    private IVoucherService voucherService;
+
+
+    private RateLimiter rateLimiter = RateLimiter.create(100);
+
 
     @PostMapping("seckill/{id}")
     public Result seckillVoucher(@PathVariable("id") Long voucherId) {
+
         SeckillVoucher seckillVoucher = seckillVoucherService.getById(voucherId);
+        if (!rateLimiter.tryAcquire(1000, TimeUnit.MILLISECONDS)) {
+            log.error("用户: {} 被限流.", UserHolder.getUser());
+            return Result.fail("请求流量过大，请稍后重试!");
+
+        }
         // 前端传来的ID不存在
         if (Objects.isNull(seckillVoucher)) {
             return Result.fail("没有这个优惠券!");

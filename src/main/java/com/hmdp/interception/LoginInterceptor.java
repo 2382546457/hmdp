@@ -1,9 +1,10 @@
-package com.hmdp.utils;
+package com.hmdp.interception;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollectionUtil;
 import com.hmdp.dto.UserDTO;
 import com.hmdp.entity.User;
+import com.hmdp.utils.UserHolder;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.core.annotation.Order;
 import org.springframework.data.redis.core.StringRedisTemplate;
