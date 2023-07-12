@@ -1,5 +1,6 @@
 package com.hmdp.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.hmdp.dto.Result;
 import com.hmdp.entity.SeckillVoucher;
 import com.hmdp.entity.Voucher;
@@ -15,7 +16,7 @@ public interface IVoucherOrderService extends IService<VoucherOrder> {
      * @param seckillVoucher 优惠券
      * @return 生成的订单id
      */
-    Result secondKill(SeckillVoucher seckillVoucher);
+    Result secondKill(SeckillVoucher seckillVoucher) throws JsonProcessingException;
 
     /**
      * 创建订单
