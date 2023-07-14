@@ -41,7 +41,7 @@ public class BlogController {
     public Result likeBlog(@PathVariable("id") Long id) throws JsonProcessingException {
         // 修改点赞数量
         Long userId = UserHolder.getUser().getId();
-        boolean success = blogService.like(id, userId);
+        blogService.like(id, userId);
         return Result.ok();
     }
 

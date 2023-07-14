@@ -10,11 +10,13 @@ import com.hmdp.mapper.BlogMapper;
 import com.hmdp.mapper.UserMapper;
 import com.hmdp.service.IBlogService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.hmdp.utils.RedisConstants;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.rocketmq.client.producer.SendCallback;
 import org.apache.rocketmq.client.producer.SendResult;
 import org.apache.rocketmq.spring.core.RocketMQTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.io.UnsupportedEncodingException;
@@ -34,6 +36,8 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
 
     @Autowired
     private RocketMQTemplate rocketMQTemplate;
+    @Autowired
+    private StringRedisTemplate stringRedisTemplate;
 
     @Override
     public Result queryBolgById(Long id) {
@@ -44,15 +48,16 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
         }
         // 查询blog对应的用户
         User user = userMapper.selectById(blog.getUserId());
-        // 设置用户的属性
+        Boolean member = stringRedisTemplate.opsForSet().isMember(RedisConstants.BLOG_LIKED_KEY + id, user.getId().toString());
+        // 设置博客对应的用户的属性
         blog.setIcon(user.getIcon());
         blog.setName(user.getNickName());
-
+        blog.setIsLike(member);
         return Result.ok(blog);
     }
 
     @Override
-    public boolean like(Long blogId, Long userId) throws JsonProcessingException {
+    public void like(Long blogId, Long userId) throws JsonProcessingException {
         LikeDto likeDto = new LikeDto(blogId, userId);
         // 发消息队列
         rocketMQTemplate.asyncSend("hmdp:like",
@@ -70,10 +75,11 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
                         log.error("点赞消息发送失败! {}", throwable.toString());
                         log.info("user id : {}", userId);
                         log.info("blog id : {}", blogId);
+                        throw new RuntimeException("点赞失败!");
                     }
                 }
         );
-        return false;
+
     }
 
 }

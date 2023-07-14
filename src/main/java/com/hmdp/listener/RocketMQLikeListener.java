@@ -34,6 +34,7 @@ public class RocketMQLikeListener implements RocketMQListener<MessageExt> {
     private StringRedisTemplate stringRedisTemplate;
     @Autowired
     private BlogMapper blogMapper;
+
     @Override
     public void onMessage(MessageExt messageExt) {
         LikeDto likeDto = null;
@@ -45,17 +46,21 @@ public class RocketMQLikeListener implements RocketMQListener<MessageExt> {
         // 去Redis看当前用户是否已经点赞过
         Long blogId = likeDto.getBlogId();
         Long userId = likeDto.getUserId();
-        Boolean exists = stringRedisTemplate.opsForSet().isMember(RedisConstants.BLOG_LIKED_KEY + blogId, userId.toString());
+        boolean exists = stringRedisTemplate.opsForSet().isMember(RedisConstants.BLOG_LIKED_KEY + blogId, userId.toString());
         // 存在，说明已经被点赞了
-        if (exists.booleanValue()) {
+        if (exists) {
             // 从Redis删掉
-            stringRedisTemplate.opsForSet().remove(RedisConstants.BLOG_LIKED_KEY + blogId, userId.toString());
-            blogMapper.updateLikeCount(blogId, 1);
-
+            Integer count = blogMapper.updateLikeCount(blogId, 1);
+            if (count > 0) {
+                stringRedisTemplate.opsForSet().remove(RedisConstants.BLOG_LIKED_KEY + blogId, userId.toString());
+            }
         } else {
             // 加到Redis
-            stringRedisTemplate.opsForSet().add(RedisConstants.BLOG_LIKED_KEY + blogId, String.valueOf(userId));
-            blogMapper.updateLikeCount(blogId, -1);
+            Integer count = blogMapper.updateLikeCount(blogId, -1);
+            if (count < 1) {
+                stringRedisTemplate.opsForSet().add(RedisConstants.BLOG_LIKED_KEY + blogId, String.valueOf(userId));
+
+            }
         }
     }
 }

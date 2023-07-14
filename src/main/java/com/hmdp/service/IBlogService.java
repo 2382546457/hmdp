@@ -15,7 +15,6 @@ public interface IBlogService extends IService<Blog> {
      * 点赞功能
      * @param bolgId 博客id
      * @param userId 用户id
-     * @return 是否成功
      */
-    boolean like(Long bolgId, Long userId) throws JsonProcessingException;
+    void like(Long bolgId, Long userId) throws JsonProcessingException;
 }
