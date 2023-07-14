@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.hmdp.dto.Result;
 import com.hmdp.entity.Blog;
 import com.baomidou.mybatisplus.extension.service.IService;
-import org.springframework.stereotype.Service;
 
 
 public interface IBlogService extends IService<Blog> {
@@ -16,5 +15,11 @@ public interface IBlogService extends IService<Blog> {
      * @param bolgId 博客id
      * @param userId 用户id
      */
-    void like(Long bolgId, Long userId) throws JsonProcessingException;
+    void likeBlog(Long bolgId, Long userId) throws JsonProcessingException;
+
+    /**
+     * 查询当前登录用户是否点赞该博客
+     * @return
+     */
+    public boolean isLike(Long userId, Long blogId);
 }

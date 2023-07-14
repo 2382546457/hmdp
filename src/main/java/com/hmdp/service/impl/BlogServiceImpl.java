@@ -1,5 +1,6 @@
 package com.hmdp.service.impl;
 
+import cn.hutool.core.util.BooleanUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hmdp.dto.LikeDto;
@@ -48,16 +49,21 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
         }
         // 查询blog对应的用户
         User user = userMapper.selectById(blog.getUserId());
-        Boolean member = stringRedisTemplate.opsForSet().isMember(RedisConstants.BLOG_LIKED_KEY + id, user.getId().toString());
+        boolean isLike = isLike(user.getId(), id);
         // 设置博客对应的用户的属性
         blog.setIcon(user.getIcon());
         blog.setName(user.getNickName());
-        blog.setIsLike(member);
+        blog.setIsLike(isLike);
         return Result.ok(blog);
     }
 
+
+    public boolean isLike(Long userId, Long blogId) {
+        return BooleanUtil.isTrue(stringRedisTemplate.opsForSet().isMember(RedisConstants.BLOG_LIKED_KEY + blogId, userId.toString()));
+    }
+
     @Override
-    public void like(Long blogId, Long userId) throws JsonProcessingException {
+    public void likeBlog(Long blogId, Long userId) throws JsonProcessingException {
         LikeDto likeDto = new LikeDto(blogId, userId);
         // 发消息队列
         rocketMQTemplate.asyncSend("hmdp:like",
