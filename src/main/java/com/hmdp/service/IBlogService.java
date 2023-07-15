@@ -22,4 +22,11 @@ public interface IBlogService extends IService<Blog> {
      * @return
      */
     public boolean isLike(Long userId, Long blogId);
+
+    /**
+     * 查询博客点赞最早的n个人
+     * @param blogId
+     * @return
+     */
+    Result likes(Long blogId, int count);
 }

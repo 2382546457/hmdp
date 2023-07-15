@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Objects;
 
 
 @RestController
@@ -37,6 +38,12 @@ public class BlogController {
         return Result.ok(blog.getId());
     }
 
+    /**
+     * 用户点赞
+     * @param id 博客id
+     * @return 结果集
+     * @throws JsonProcessingException json序列化异常
+     */
     @PutMapping("/like/{id}")
     public Result likeBlog(@PathVariable("id") Long id) throws JsonProcessingException {
         // 修改点赞数量
@@ -65,13 +72,13 @@ public class BlogController {
                 .page(new Page<>(current, SystemConstants.MAX_PAGE_SIZE));
         // 获取当前页数据
         List<Blog> records = page.getRecords();
-        // 查询用户
+        // 获取当前登录用户是否点赞这个blog
         records.forEach(blog ->{
-            Long userId = blog.getUserId();
-            User user = userService.getById(userId);
-            blog.setName(user.getNickName());
-            blog.setIcon(user.getIcon());
-            blog.setIsLike(blogService.isLike(userId, blog.getId()));
+            Long nowUser = UserHolder.getUser().getId();
+            if (!Objects.isNull(nowUser)) {
+                blogService.isLike(nowUser, blog.getId());
+            }
+
         });
         return Result.ok(records);
     }
@@ -79,5 +86,16 @@ public class BlogController {
     @GetMapping("/{id}")
     public Result queryBlogById(@PathVariable("id") Long id) {
         return blogService.queryBolgById(id);
+    }
+
+    /**
+     * 给某一博客点赞的用户(取前五个)
+     * @param blogId
+     * @return
+     */
+    @GetMapping("/likes/{id}")
+    public Result likes(@PathVariable("id") Long blogId) {
+        return blogService.likes(blogId, 5);
+
     }
 }

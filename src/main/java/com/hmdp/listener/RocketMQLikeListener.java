@@ -13,6 +13,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.util.Objects;
 
 /**
  * @ClassName RocketMQLikeListener
@@ -46,20 +47,19 @@ public class RocketMQLikeListener implements RocketMQListener<MessageExt> {
         // 去Redis看当前用户是否已经点赞过
         Long blogId = likeDto.getBlogId();
         Long userId = likeDto.getUserId();
-        boolean exists = stringRedisTemplate.opsForSet().isMember(RedisConstants.BLOG_LIKED_KEY + blogId, userId.toString());
+        Double score = stringRedisTemplate.opsForZSet().score(RedisConstants.BLOG_LIKED_KEY + blogId, userId.toString());
         // 存在，说明已经被点赞了
-        if (exists) {
+        if (!Objects.isNull(score)) {
             // 从Redis删掉
             Integer count = blogMapper.updateLikeCount(blogId, 1);
             if (count > 0) {
-                stringRedisTemplate.opsForSet().remove(RedisConstants.BLOG_LIKED_KEY + blogId, userId.toString());
+                stringRedisTemplate.opsForZSet().remove(RedisConstants.BLOG_LIKED_KEY + blogId, userId.toString());
             }
         } else {
-            // 加到Redis
+            // 加到Redi 的 zset中
             Integer count = blogMapper.updateLikeCount(blogId, -1);
             if (count < 1) {
-                stringRedisTemplate.opsForSet().add(RedisConstants.BLOG_LIKED_KEY + blogId, String.valueOf(userId));
-
+                stringRedisTemplate.opsForZSet().add(RedisConstants.BLOG_LIKED_KEY + blogId, String.valueOf(userId), System.currentTimeMillis());
             }
         }
     }
