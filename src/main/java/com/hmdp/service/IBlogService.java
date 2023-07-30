@@ -29,4 +29,12 @@ public interface IBlogService extends IService<Blog> {
      * @return
      */
     Result likes(Long blogId, int count);
+
+
+    /**
+     * 保存blog
+     * @param blog
+     * @return
+     */
+    Result saveBlog(Blog blog) throws JsonProcessingException;
 }

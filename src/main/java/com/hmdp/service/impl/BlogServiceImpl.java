@@ -1,21 +1,27 @@
 package com.hmdp.service.impl;
 
+import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.BooleanUtil;
 import cn.hutool.core.util.StrUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
+import com.hmdp.dto.FollowFeed;
 import com.hmdp.dto.LikeDto;
 import com.hmdp.dto.Result;
 import com.hmdp.dto.UserDTO;
 import com.hmdp.entity.Blog;
+import com.hmdp.entity.Follow;
 import com.hmdp.entity.User;
 import com.hmdp.mapper.BlogMapper;
+import com.hmdp.mapper.FollowMapper;
 import com.hmdp.mapper.UserMapper;
 import com.hmdp.service.IBlogService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.hmdp.service.IUserService;
 import com.hmdp.utils.RedisConstants;
+import com.hmdp.utils.UserHolder;
 import jodd.util.StringUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.rocketmq.client.producer.SendCallback;
@@ -44,6 +50,8 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
     private BlogMapper blogMapper;
     @Autowired
     private UserMapper userMapper;
+    @Autowired
+    private FollowMapper followMapper;
 
     @Autowired
     private IUserService userService;
@@ -90,6 +98,50 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
             return userDTO;
         }).collect(Collectors.toList());
         return Result.ok(userDTOS);
+    }
+
+    @Override
+    public Result saveBlog(Blog blog) throws JsonProcessingException {
+        Long id = UserHolder.getUser().getId();
+        blog.setUserId(id);
+        // 保存博客
+        boolean save = save(blog);
+        if (!save) {
+            return Result.fail("保存失败!");
+        }
+        // 开始推送
+        // 获取当前用户的所有粉丝
+        LambdaQueryWrapper<Follow> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Follow::getFollowUserId, id);
+        List<Long> followsID = followMapper.selectList(wrapper).stream().map(Follow::getId).collect(Collectors.toList());
+        // 如果没有粉丝可以不用推送
+        if (CollectionUtil.isEmpty(followsID)) {
+            return Result.ok();
+        }
+        // 异步发送消息
+        FollowFeed followFeed = new FollowFeed(followsID, blog.getId());
+        rocketMQTemplate.asyncSend("hmdp:follow",
+                new ObjectMapper().writeValueAsBytes(followFeed),
+                new SendCallback() {
+                    @Override
+                    public void onSuccess(SendResult sendResult) {
+                        log.info("推送信息发送成功! {}", sendResult);
+                        log.info("user id : {}", id);
+                        log.info("follows id : {}", followsID);
+                    }
+
+                    @Override
+                    public void onException(Throwable throwable) {
+                        log.error("点赞消息发送失败! {}", throwable.toString());
+                        log.info("user id : {}", id);
+                        log.info("follows id : {}", followsID);
+                        throw new RuntimeException("点赞失败!");
+                    }
+                }
+        );
+        return Result.ok();
+
+
     }
 
     @Override
