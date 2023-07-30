@@ -3,6 +3,7 @@ package com.hmdp.service.impl;
 import cn.hutool.captcha.CaptchaUtil;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.bean.copier.CopyOptions;
+import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.jwt.JWTUtil;
 import com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapper;
@@ -13,13 +14,11 @@ import com.hmdp.dto.UserDTO;
 import com.hmdp.entity.User;
 import com.hmdp.mapper.UserMapper;
 import com.hmdp.service.IUserService;
-import com.hmdp.utils.JWTUtils;
-import com.hmdp.utils.PasswordEncoder;
-import com.hmdp.utils.RedisConstants;
-import com.hmdp.utils.SystemConstants;
+import com.hmdp.utils.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.connection.BitFieldSubCommands;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -27,7 +26,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpSession;
+import java.time.LocalDate;
+import java.time.Month;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -92,6 +94,57 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         redisTemplate.expire(RedisConstants.LOGIN_USER_KEY + token, RedisConstants.LOGIN_USER_TTL, TimeUnit.MINUTES);
 
         return Result.ok(token);
+    }
+
+    @Override
+    public boolean sign() {
+        // 拼接key
+        // userId:year:month
+        Long userId = UserHolder.getUser().getId();
+
+        LocalDate now = LocalDate.now();
+        int year = now.getYear();
+        int month = now.getMonth().getValue();
+        int day = now.getDayOfMonth();
+
+        String key = RedisConstants.USER_SIGN_KEY + userId + ":" + year + ":" + month;
+        return Boolean.TRUE.equals(redisTemplate.opsForValue().setBit(key, day - 1, true));
+
+
+    }
+
+    @Override
+    public Integer maxSignCount() {
+        // 1. 获取本月截止到今天的签到记录
+        Long userId = UserHolder.getUser().getId();
+        LocalDate now = LocalDate.now();
+        int year = now.getYear();
+        int month = now.getMonth().getValue();
+        int day = now.getDayOfMonth();
+
+        String key = RedisConstants.USER_SIGN_KEY + userId + ":" + year + ":" + month;
+        List<Long> bits = redisTemplate.opsForValue()
+                .bitField(key, BitFieldSubCommands.create().get(BitFieldSubCommands.BitFieldType.unsigned(day)).valueAt(0));
+        if (CollectionUtil.isEmpty(bits)) {
+            return 0;
+        }
+        Long num = bits.get(0);
+        if (Objects.isNull(num) || num.longValue() == 0) {
+            return 0;
+        }
+        // 2. 计算连续1最多的。 011110111 -> 最多4个连续的1
+        int maxCount = 0;
+        int count = 0;
+        for (int i = 0; i < 32; i++) {
+            if (((num >> i) & 1) == 0) {
+                count = 0;
+                continue;
+            } else {
+                count++;
+            }
+            maxCount = Math.max(maxCount, count);
+        }
+        return maxCount;
     }
 
     /**

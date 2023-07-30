@@ -3,7 +3,6 @@ package com.hmdp.service;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.hmdp.dto.Result;
 import com.hmdp.entity.User;
-import org.springframework.stereotype.Service;
 
 import javax.servlet.http.HttpSession;
 
@@ -36,5 +35,15 @@ public interface IUserService extends IService<User> {
      */
     Result login(String phone, String password, String code, HttpSession session) throws Exception;
 
+    /**
+     * 签到功能
+     * @return
+     */
+    boolean sign();
 
+    /**
+     * 获取最大连续签到天数
+     * @return
+     */
+    Integer maxSignCount();
 }

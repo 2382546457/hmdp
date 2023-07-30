@@ -67,6 +67,7 @@ public class UserController {
 
     /**
      * 查询某一个用户的信息
+     *
      * @param userId 用户id
      * @return
      */
@@ -92,5 +93,25 @@ public class UserController {
         }
         UserDTO userDTO = BeanUtil.copyProperties(user, UserDTO.class);
         return Result.ok(userDTO);
+    }
+
+    /**
+     * 实现签到功能
+     *
+     * @return
+     */
+    @PostMapping("/sign")
+    public Result sign() {
+        boolean sign = userService.sign();
+        if (!sign) {
+            return Result.fail("签到失败，请重试");
+        }
+        return Result.ok();
+    }
+
+    @GetMapping("/sign/count")
+    public Result signCount() {
+        Integer maxCount = userService.maxSignCount();
+        return Result.ok(maxCount);
     }
 }
