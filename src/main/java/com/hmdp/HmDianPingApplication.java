@@ -13,6 +13,7 @@ import org.springframework.scripting.support.ResourceScriptSource;
 public class HmDianPingApplication {
 
     public static void main(String[] args) {
+
         SpringApplication.run(HmDianPingApplication.class, args);
     }
 
