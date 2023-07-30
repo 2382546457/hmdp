@@ -37,4 +37,12 @@ public interface IBlogService extends IService<Blog> {
      * @return
      */
     Result saveBlog(Blog blog) throws JsonProcessingException;
+
+    /**
+     * 通过滚动分页实现关注推送的查询
+     * @param maxTime 时间戳
+     * @param offset 偏移量
+     * @return
+     */
+    Result queryBlogOfFollow(Long maxTime, Integer offset);
 }

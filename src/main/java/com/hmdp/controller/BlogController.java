@@ -92,4 +92,10 @@ public class BlogController {
         return blogService.likes(blogId, 5);
 
     }
+
+    @GetMapping("/of/follow")
+    public Result queryBlogFollow(@RequestParam("lastId") Long maxTime,
+                                  @RequestParam(value = "offset", defaultValue = "0") Integer offset) {
+        return blogService.queryBlogOfFollow(maxTime, offset);
+    }
 }

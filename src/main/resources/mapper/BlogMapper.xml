@@ -7,4 +7,30 @@
     <update id="updateLikeCount">
         update TB_BLOG set liked = liked + #{count} where id = #{id};
     </update>
+    <select id="selectByIdsOrdered" resultType="com.hmdp.entity.Blog">
+        select
+            blog.id,
+            blog.shop_id,
+            blog.user_id,
+            blog.title,
+            blog.images,
+            blod.content,
+            blog.liked,
+            blod.comments,
+            user.icon,
+            user.name,
+
+        from tb_blog blog left join tb_user user
+            on blog.user_id = user.id
+        where id in
+        <foreach collection="ids" item="blogId" open = "(" close=")" separator=", ">
+            #{blogId}
+        </foreach>
+        order by field (
+            'id',
+            <foreach collection="ids" item="blogId" separator=", ">#{blogId}
+            </foreach>
+        )
+
+    </select>
 </mapper>

@@ -13,6 +13,7 @@ import com.hmdp.dto.Result;
 import com.hmdp.dto.UserDTO;
 import com.hmdp.entity.Blog;
 import com.hmdp.entity.Follow;
+import com.hmdp.entity.ScrollResult;
 import com.hmdp.entity.User;
 import com.hmdp.mapper.BlogMapper;
 import com.hmdp.mapper.FollowMapper;
@@ -31,15 +32,14 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
@@ -142,6 +142,39 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
         return Result.ok();
 
 
+    }
+
+    @Override
+    public Result queryBlogOfFollow(Long maxTime, Integer offset) {
+        // 1. 获取当前用户
+        Long id = UserHolder.getUser().getId();
+        String key = RedisConstants.FEED_KEY + id;
+        // 2. 查询收件箱，ZREVRANGEBYSCORE key max min limit offset count
+        Set<ZSetOperations.TypedTuple<String>> typedTuples = stringRedisTemplate.opsForZSet()
+                .reverseRangeByScoreWithScores(key, 0, maxTime, offset, 5);
+        if (CollectionUtils.isEmpty(typedTuples)) {
+            return Result.ok();
+        }
+
+        // 3. 解析数据: blogId、minTime、offset
+        List<Long> blogIds = new ArrayList<>(typedTuples.size());
+        Long minTime = 0L;
+        for (ZSetOperations.TypedTuple<String> typedTuple : typedTuples) {
+            Long blogId = Long.valueOf(Objects.requireNonNull(typedTuple.getValue()));
+            blogIds.add(blogId);
+            minTime = Objects.requireNonNull(typedTuple.getScore()).longValue();
+        }
+        // 4. 根据id查询blog
+        // 不能直接使用 listByIds, 因为现在的blog是有顺序的，为了避免顺序被破坏应该使用 order by field (在UserMapper.xml中例子)
+        // 博客查出来了，还要查博客对应的用户信息、当前登录用户是否点赞
+        List<Blog> blogs = blogMapper.selectByIdsOrdered(blogIds);
+        blogs.forEach(blog -> {
+            blog.setIsLike(isLike(id, blog.getId()));
+        });
+        // 5. 封装返回
+        offset = 1;
+        ScrollResult scrollResult = new ScrollResult(blogs, minTime, offset);
+        return Result.ok(scrollResult);
     }
 
     @Override
